@@ -3,6 +3,7 @@ module github.com/miniyk2012/gin_demo
 go 1.13
 
 require (
+	github.com/gin-contrib/multitemplate v0.0.0-20200226145339-3e397ee01bc6 // indirect
 	github.com/gin-gonic/gin v1.5.0
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/golang/protobuf v1.3.4 // indirect
