@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <title>login</title>
+</head>
+<body>
+<form action="/login" method="post">
+    <div>
+        <label for="username">username:</label>
+        <input type="text" name="username" id="username"/>
+    </div>
+    <div>
+        <label for="password">password:</label>
+        <input type="password" name="password" id="password"/>
+    </div>
+    <input type="submit" value="登陆"/>
+</form>
+<hr>
+<form action="/upload" method="post" enctype="multipart/form-data">
+    <div>
+        <input type="file" name="f1">
+    </div>
+    <input type="submit" value="上传">
+</form>
+<hr>
+<form action="/uploads" method="post" enctype="multipart/form-data">
+    <div>
+        <input type="file" name="f1" multiple>
+    </div>
+    <input type="submit" value="多个文件上传">
+</form>
+</body>
+</html>

@@ -1,11 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/testdata/protoexample"
 	"github.com/miniyk2012/gin_demo/tools"
 	"html/template"
+	"log"
 	"net/http"
+	"path"
 )
 
 func sayHello(c *gin.Context) {
@@ -81,20 +84,20 @@ func loadTemplates(e *gin.Engine) {
 }
 
 func jsonDemo(e *gin.Engine) {
-	e.GET("/json", func (c *gin.Context) {
+	e.GET("/json", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"name": "杨恺",
-			"Age": 18,
+			"Age":  18,
 		})
 	})
 
 	e.GET("json_more", func(c *gin.Context) {
 		c.JSON(http.StatusOK, struct {
 			Name string `json:"name"`
-			Age int
+			Age  int
 		}{
 			Name: "杨恺",
-			Age: 19,
+			Age:  19,
 		})
 	})
 	e.GET("/someXML", func(c *gin.Context) {
@@ -125,9 +128,9 @@ func jsonDemo(e *gin.Engine) {
 		type_ := int32(65)
 		// protobuf 的具体定义写在 testdata/protoexample 文件中。
 		var data = &protoexample.Test{
-			Label: &label,
-			Reps:  reps,
-			Type:  &type_,
+			Label:            &label,
+			Reps:             reps,
+			Type:             &type_,
 			XXX_unrecognized: []byte("123"),
 		} // 请注意，数据在响应中变为二进制数据
 		// 将输出被 protoexample.Test protobuf 序列化了的数据
@@ -139,12 +142,121 @@ func jsonDemo(e *gin.Engine) {
 		type_ := int32(65)
 		// protobuf 的具体定义写在 testdata/protoexample 文件中。
 		data := &protoexample.Test{
-			Label: &label,
-			Reps:  reps,
-			Type : &type_,
+			Label:            &label,
+			Reps:             reps,
+			Type:             &type_,
 			XXX_unrecognized: []byte("123"),
 		}
 		c.JSON(http.StatusOK, data)
+	})
+}
+
+func paramsDemo(e *gin.Engine) {
+	e.GET("/user/search", func(c *gin.Context) {
+		username := c.DefaultQuery("username", "小王子")
+		//username := c.Query("username")
+		address := c.Query("address")
+		//输出json结果给调用方
+		c.JSON(http.StatusOK, gin.H{
+			"message":  "ok",
+			"username": username,
+			"address":  address,
+		})
+	})
+	e.POST("/user/search", func(c *gin.Context) {
+		// DefaultPostForm取不到值时会返回指定的默认值
+		//username := c.DefaultPostForm("username", "小王子")
+		username := c.PostForm("username")
+		address := c.PostForm("address")
+		//输出json结果给调用方
+		c.JSON(http.StatusOK, gin.H{
+			"message":  "ok",
+			"username": username,
+			"address":  address,
+		})
+	})
+
+	e.GET("/user/search/:username/:address", func(c *gin.Context) {
+		username := c.Param("username")
+		address := c.Param("address")
+		//输出json结果给调用方
+		c.JSON(http.StatusOK, gin.H{
+			"message":  "ok",
+			"username": username,
+			"address":  address,
+		})
+	})
+}
+
+func bindParam(e *gin.Engine) {
+	// Binding from JSON
+	type Login struct {
+		User     string `form:"username" json:"username" binding:"required"`
+		Password string `form:"password" json:"Passwords" binding:"required"`
+	}
+
+	e.GET("/login", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "login.html", nil)
+	})
+	// 绑定form表单示例 (user=q1mi&password=123456)
+	e.POST("/login", func(c *gin.Context) {
+		var login Login
+		// ShouldBind()会根据请求的Content-Type自行选择绑定器
+		if err := c.ShouldBind(&login); err == nil {
+			c.JSON(http.StatusOK, login)
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+	})
+
+	// 绑定QueryString示例 (/loginQuery?username=q1mi&password=123456)
+	e.GET("/loginQuery", func(c *gin.Context) {
+		var login Login
+		// ShouldBind()会根据请求的Content-Type自行选择绑定器
+		if err := c.ShouldBind(&login); err == nil {
+			c.JSON(http.StatusOK, gin.H{
+				"user":     login.User,
+				"password": login.Password,
+			})
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
+	})
+
+}
+
+func uploadFiles(e *gin.Engine) {
+	e.POST("/upload", func(c *gin.Context) {
+		// 单个文件
+		file, err := c.FormFile("f1")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": err.Error(),
+			})
+			return
+		}
+
+		dst := path.Join(tools.GetCurrentPath(), "data", file.Filename)
+		// 上传文件到指定的目录
+		c.SaveUploadedFile(file, dst)
+		c.JSON(http.StatusOK, gin.H{
+			"message": fmt.Sprintf("'%s' uploaded!", file.Filename),
+		})
+	})
+	e.POST("/uploads", func(c *gin.Context) {
+		// Multipart form
+		form, _ := c.MultipartForm()
+		files := form.File["f1"]
+
+		for _, file := range files {
+			log.Println(file.Filename)
+			dst := path.Join( "data", file.Filename)
+			// 上传文件到指定的目录
+			c.SaveUploadedFile(file, dst)
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"message": fmt.Sprintf("%d files uploaded!", len(files)),
+		})
 	})
 }
 func main() {
@@ -156,5 +268,8 @@ func main() {
 	demo3(e)
 	demo4(e)
 	jsonDemo(e)
+	paramsDemo(e)
+	bindParam(e)
+	uploadFiles(e)
 	e.Run(":9091")
 }
