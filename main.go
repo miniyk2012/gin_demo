@@ -89,7 +89,7 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 	}
 	server02 := &http.Server{
-		Addr: ":8081",
+		Addr: ":8082",
 		Handler:      router02(),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
