@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
@@ -10,18 +11,16 @@ import (
 func demo(db *gorm.DB) {
 	db.Exec("drop table if exists user")
 	db.AutoMigrate(&User{})
-	user := User{Name: new(string), Age: 18}
-	db.Create(&user) // 此时数据库中该条记录name字段的值就是''
-	fmt.Printf("%#v\n", user)
-
-	user = User{Age: 18}
+	user := User{Name: sql.NullString{"", false}, Age: 18} // 此时数据库中该条记录name字段的值就是'小王子'
+	//user := User{Name: sql.NullString{"", true}, Age: 18}  // 此时数据库中该条记录name字段的值就是''
 	db.Create(&user)
-	fmt.Printf("%#v\n", *user.Name)
+	fmt.Printf("%#v\n", user.Name.String)
+
 }
 
 type User struct {
 	ID   int64
-	Name *string `gorm:"default:'小王子'"`
+	Name sql.NullString `gorm:"default:'小王子'"` // sql.NullString 实现了Scanner/Valuer接口
 	Age  int64
 }
 
@@ -48,7 +47,5 @@ func initDb() *gorm.DB {
 func main() {
 	db := initDb()
 	defer db.Close()
-	//demo1(db)
-	//demo2(db)
 	demo(db)
 }
